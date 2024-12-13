@@ -70,7 +70,9 @@ def wait_for_file():
                 file_name = "Agario.ipa"
                 download_file(file_id, file_name)
                 return
+        logger.info("Sleeping for five seconds...")
         time.sleep(5)  # Avoid spamming the API
+        
 
 
 if __name__ == "__main__":
