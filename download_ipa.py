@@ -1,56 +1,81 @@
 import os
+import requests
+import time
 import logging
-from telegram import Bot, Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, filters, CallbackContext, Application
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-
+CHAT_ID = "7106204388"  # Replace with your chat ID
 APP_STORE_LINK = "https://apps.apple.com/app/id995999703"  # Agar.io
+TELEGRAM_API_BASE = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
 
-def send_app_link(bot: Bot):
+def send_app_link():
     """Send the App Store link to EeveeDecrypterBot."""
-    eevee_bot_username = "@eeveedecrypterbot"
+    message = f"@eeveedecrypterbot {APP_STORE_LINK}"
+    url = f"{TELEGRAM_API_BASE}/sendMessage"
+    payload = {"chat_id": CHAT_ID, "text": message}
     logger.info("Sending App Store link to EeveeDecrypterBot...")
-    try:
-        message = bot.send_message(chat_id=7106204388, text=f"{eevee_bot_username} {APP_STORE_LINK}") # personal chat
-        logger.info(f"Message sent to EeveeDecrypterBot: {message.message_id}")
-    except Exception as e:
-        logger.error(f"Error sending message: {e}")
-        raise
+    response = requests.post(url, json=payload)
+    if response.status_code == 200:
+        logger.info("Message sent successfully.")
+    else:
+        logger.error(f"Failed to send message: {response.text}")
 
 
-def fetch_decrypted_ipa(update: Update, context: CallbackContext):
-    """Fetch the decrypted IPA file sent by EeveeDecrypterBot."""
-    if update.message:
-        file = context.bot.get_file(update.message.document)
-        file_name = "Agario.ipa"
-        file.download_to_drive(file_name)
-        logger.info(f"File downloaded: {file_name}")
+def fetch_latest_messages():
+    """Fetch the latest messages sent to the bot."""
+    url = f"{TELEGRAM_API_BASE}/getUpdates"
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json()["result"]
+    else:
+        logger.error(f"Failed to fetch messages: {response.text}")
+        return []
 
 
-def main():
-    """Main function to handle messaging and file retrieval."""
-    bot = Bot(BOT_TOKEN)
-    if not BOT_TOKEN:
-        logger.error("Bot token not provided. Set TELEGRAM_BOT_TOKEN in environment.")
-        return
-    application = Application.builder().token(BOT_TOKEN).build()
+def download_file(file_id, file_name):
+    """Download a file from Telegram."""
+    # Get file path
+    url = f"{TELEGRAM_API_BASE}/getFile"
+    response = requests.get(url, params={"file_id": file_id})
+    if response.status_code == 200:
+        file_path = response.json()["result"]["file_path"]
 
-    application.add_handler(MessageHandler(filters.ATTACHMENT, fetch_decrypted_ipa))
+        # Download the file
+        file_url = f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_path}"
+        file_response = requests.get(file_url, stream=True)
+        if file_response.status_code == 200:
+            with open(file_name, "wb") as file:
+                for chunk in file_response.iter_content(chunk_size=1024):
+                    file.write(chunk)
+            logger.info(f"File downloaded successfully: {file_name}")
+        else:
+            logger.error(f"Failed to download file: {file_response.text}")
+    else:
+        logger.error(f"Failed to get file path: {response.text}")
 
-    # Start the bot and send the app link
-    send_app_link(bot)
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
-    
-    # send_app_link(bot)
 
+def wait_for_file():
+    """Poll for a file response from EeveeDecrypterBot."""
     logger.info("Waiting for decrypted IPA...")
-
+    while True:
+        messages = fetch_latest_messages()
+        for message in messages:
+            if "document" in message.get("message", {}):
+                document = message["message"]["document"]
+                file_id = document["file_id"]
+                file_name = "Agario.ipa"
+                download_file(file_id, file_name)
+                return
+        time.sleep(5)  # Avoid spamming the API
 
 
 if __name__ == "__main__":
-    main()
+    if not BOT_TOKEN:
+        logger.error("Bot token not provided. Set TELEGRAM_BOT_TOKEN in environment.")
+    else:
+        send_app_link()
+        wait_for_file()
