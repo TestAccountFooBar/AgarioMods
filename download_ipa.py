@@ -11,7 +11,7 @@ BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 APP_STORE_LINK = "https://apps.apple.com/app/id995999703"  # Agar.io
 
 
-async def send_app_link(bot: Bot):
+def send_app_link(bot: Bot):
     """Send the App Store link to EeveeDecrypterBot."""
     eevee_bot_username = "@eeveedecrypterbot"
     logger.info("Sending App Store link to EeveeDecrypterBot...")
