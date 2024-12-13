@@ -7,7 +7,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-CHAT_ID = "7106204388"  # Replace with your chat ID
+CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 APP_STORE_LINK = "https://apps.apple.com/app/id995999703"  # Agar.io
 TELEGRAM_API_BASE = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
