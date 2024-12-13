@@ -57,12 +57,10 @@ def main():
     try:
         asyncio.run(main_async())
     except RuntimeError as e:
-        if str(e).startswith("This event loop is already running"):
-            logger.info("Detected running event loop. Using existing loop.")
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(main_async())
-        else:
-            raise
+        logger.info("Detected running event loop. Using existing loop.")
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(main_async())
+
 
 
 if __name__ == "__main__":
