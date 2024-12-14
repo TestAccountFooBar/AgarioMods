@@ -1,4 +1,6 @@
 import asyncio
+import os
+import signal
 from pyrogram import Client, filters
 from pyrogram.handlers import MessageHandler
 
@@ -34,9 +36,14 @@ async def main():
     print("Message sent. Waiting for the response...")
 
     # Keep the client running to process messages
-    await app._should_stop.wait()
-    await app.stop()
-    print("Client stopped. Exiting.")
+    try:
+        await asyncio.wait_for(app._should_stop.wait(), timeout=10 * 60)
+    except asyncio.TimeoutError:
+        print("Timed out after 10 minutes. Killing the task.")
+        os.kill(os.getpid(), signal.SIGINT)
+    finally:
+        await app.stop()
+        print("Client stopped. Exiting.")
 
 if __name__ == "__main__":
     asyncio.run(main())
