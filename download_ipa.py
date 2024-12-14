@@ -6,7 +6,7 @@ TARGET_BOT_USERNAME = "eeveedecrypterbot"
 APP_STORE_LINK = "https://apps.apple.com/app/id995999703"
 
 
-SESSION_FILE = "user_session"  # Your encrypted session file
+SESSION_FILE = "user_session"  # encrypted session file
 
 async def handle_message(client, message):
     """Handle incoming messages from the target bot."""

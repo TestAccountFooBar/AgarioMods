@@ -51,6 +51,11 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r download-ipa-requirements.txt
+        
+      - name: Decode and decrypt session file
+        run: |
+          echo "${{ secrets.ENC_SESSION_FILE }}" | base64 --decode > user_session.session.enc
+          openssl enc -aes-256-cbc -d -in user_session.session.enc -out user_session.session -k ${{ secrets.SESSION_PASSWORD }}
 
       - name: Download decrypted IPA
         run: python download_ipa.py
@@ -58,3 +63,5 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
+      - name: Clean up session file
+        run: rm user_session.session
